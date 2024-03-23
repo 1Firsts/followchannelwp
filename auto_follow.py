@@ -2,12 +2,17 @@ import requests
 import json
 from colorama import init, Fore
 import time
+from fake_useragent import UserAgent
 
 # Initialize colorama
 init(autoreset=True)
 
 # Meminta masukan token Authorization dari pengguna
 authorization_token = input("Masukkan token Authorization: ")
+
+# Generate a fake user agent
+ua = UserAgent()
+fake_user_agent = ua.random
 
 headers = {
     'authority': 'api.warpcast.com',
@@ -22,7 +27,7 @@ headers = {
     'sec-fetch-site': 'cross-site',
     'sec-fetch-user': '?1',
     'upgrade-insecure-requests': '1',
-    'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+    'user-agent': fake_user_agent,  # Use fake user agent
     'Authorization': f'Bearer {authorization_token}'  # Gunakan token Authorization yang dimasukkan pengguna
 }
 

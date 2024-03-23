@@ -20,7 +20,7 @@ python auto_follow.py
 ```
 F12 in Profile Warpcast copy bearer token like this
 ```bash
-3xxxxxxxxaK/rRThxxxxxxxxxxZTtjxxxxxxxxxxx==
+MK-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx==
 ```
 
 ## Contributing
