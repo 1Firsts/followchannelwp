@@ -11,6 +11,7 @@ Requires Python 3.10 and the following dependencies:
 ```bash
 pip install requests
 pip install colorama
+pip install fake-useragent
 ```
 
 ## Usage
