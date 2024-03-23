@@ -13,6 +13,16 @@ pip install requests
 pip install colorama
 ```
 
+## Usage
+Command to Run
+```bash
+python auto_follow.py
+```
+F12 in Profile Warpcast copy bearer token like this
+```bash
+3xxxxxxxxaK/rRThxxxxxxxxxxZTtjxxxxxxxxxxx==
+```
+
 ## Contributing
 
 Feel free to contribute to this project! We welcome any suggestions, improvements, or bug fixes.
