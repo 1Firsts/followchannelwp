@@ -39,6 +39,11 @@ response = requests.get(
 data = json.loads(response.text)
 
 for channel in data['result']['channels']:
+    # Check if 'leadFid' key exists in the channel dictionary
+    if 'leadFid' not in channel:
+        print(Fore.RED + f"Channel {channel['id']} does not have 'leadFid' key.")
+        continue
+
     output = {
         "id": channel['id'],
         "url": f"https://warpcast.com/~/channel/{channel['id']}",
