@@ -1,8 +1,6 @@
 import requests
-import json
-from colorama import init, Fore
+from colorama import init, Fore, Style
 import time
-from fake_useragent import UserAgent
 
 # Initialize colorama
 init(autoreset=True)
@@ -10,12 +8,7 @@ init(autoreset=True)
 # Meminta masukan token Authorization dari pengguna
 authorization_token = input("Masukkan token Authorization: ")
 
-# Generate a fake user agent
-ua = UserAgent()
-fake_user_agent = ua.random
-
 headers = {
-    'User-Agent': fake_user_agent,
     'Authorization': f'Bearer {authorization_token}',
     'Content-Type': 'application/json'
 }
@@ -23,47 +16,72 @@ headers = {
 # Daftar untuk menyimpan ID channel yang sudah difollow
 followed_channels = []
 
-response = requests.get('https://api.warpcast.com/v2/all-channels', headers=headers)
-data = json.loads(response.text)
+def get_all_channels():
+    response = requests.get('https://api.warpcast.com/v2/all-channels', headers=headers)
+    response.raise_for_status()
+    return response.json()['result']['channels']
 
-for channel in data['result']['channels']:
-    # Check if 'leadFid' key exists in the channel dictionary
-    if 'leadFid' not in channel:
-        print(Fore.RED + f"Channel {channel['id']} does not have 'leadFid' key.")
-        continue
+def follow_channel(channel_id):
+    url = 'https://api.warpcast.com/v2/feed-follows'
+    data = {"feedKey": channel_id}
+    response = requests.put(url, headers=headers, json=data)
+    response.raise_for_status()
 
-    output = {
-        "id": channel['id'],
-        "url": f"https://warpcast.com/~/channel/{channel['id']}",
-        "name": channel['name'],
-        "description": channel['description'],
-        "imageUrl": channel['imageUrl'],
-        "leadFid": channel['leadFid'],
-        "createdAt": channel['createdAt']
-    }
-
-    # Periksa apakah channel sudah difollow sebelumnya
-    if channel['id'] in followed_channels:
-        print(Fore.YELLOW + f"Channel {channel['id']} sudah difollow sebelumnya.")
-        continue
-
+def read_saved_channels():
     try:
-        response = requests.put(
-            'https://client.warpcast.com/v2/feed-follows', headers=headers, json={"feedKey": channel['id']})
-        response.raise_for_status()  # Raise an exception for bad responses
-        
-        print(Fore.GREEN + f"Successfully followed channel with name {channel['id']}:")
-        print(json.dumps(output, indent=4))
-        print("------------------------")
-        
-        # Tambahkan ID channel ke dalam daftar
-        followed_channels.append(channel['id'])
-    except requests.exceptions.HTTPError as e:
-        print(Fore.RED + f"Failed to follow channel with name {channel['id']}. HTTP error occurred:", e.response.status_code)
-        print(e.response.text)
-    except json.decoder.JSONDecodeError as e:
-        print(Fore.RED + f"Failed to follow channel with name {channel['id']}. JSON decoding error:", e)
-    except Exception as e:
-        print(Fore.RED + f"Failed to follow channel with name {channel['id']}. An unexpected error occurred:", e)
-    
-    time.sleep(5)  # Jeda selama 5 detik
+        with open('channels.txt', 'r', encoding='utf-8') as file:
+            return [line.strip() for line in file.readlines()]
+    except FileNotFoundError:
+        return []
+
+def follow_channels():
+    saved_channels = read_saved_channels()
+    channels = get_all_channels()
+    with open('channels.txt', 'a', encoding='utf-8') as file:  # Use 'a' to append instead of 'w'
+        for channel in channels:
+            if 'leadFid' not in channel:
+                print(Fore.RED + f"Channel {channel['id']} does not have 'leadFid' key.")
+                continue
+
+            if channel['id'] in followed_channels:
+                print(Fore.YELLOW + f"Channel {channel['id']} sudah difollow sebelumnya.")
+                continue
+
+            if channel['name'] in saved_channels:
+                print(Fore.YELLOW + f"Channel {channel['name']} sudah ada di dalam file channels.txt.")
+                continue
+
+            try:
+                follow_channel(channel['id'])
+                print(Fore.GREEN + f"{Style.BRIGHT}[✔] Successfully followed channel:")
+                print(f"    Name: {Fore.CYAN}{channel['name']}")
+                print(f"    ID: {Fore.CYAN}{channel['id']}")
+                print(f"    URL: {Fore.CYAN}{channel['url']}")
+                file.write(f"{channel['name']}\n")  # Write name without timestamp
+                followed_channels.append(channel['id'])
+                print(Fore.YELLOW + "---------------------------------------------------")
+                time.sleep(5)
+            except requests.exceptions.HTTPError as e:
+                print(Fore.RED + f"[✘] Failed to follow channel {channel['id']}. HTTP error occurred:", e.response.status_code)
+                print(e.response.text)
+            except Exception as e:
+                print(Fore.RED + f"[✘] Failed to follow channel {channel['id']}. An unexpected error occurred:", e)
+    print(Fore.GREEN + "Data channel telah diperbarui dan disimpan ke dalam file 'channels.txt'.")
+
+def main_menu():
+    while True:
+        print("\n" + Fore.YELLOW + Style.BRIGHT + "Menu:")
+        print(Fore.YELLOW + "1. Follow all channels")
+        print(Fore.YELLOW + "2. Exit")
+        choice = input(Fore.CYAN + "Enter your choice: ")
+
+        if choice == '1':
+            follow_channels()
+        elif choice == '2':
+            print(Fore.GREEN + "Exiting...")
+            break
+        else:
+            print(Fore.RED + "Invalid choice. Please try again.")
+
+if __name__ == "__main__":
+    main_menu()
